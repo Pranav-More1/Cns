@@ -1,0 +1,75 @@
+def generate_playfair_matrix(key):
+    key = key.upper().replace("J", "I")  # Playfair replaces 'J' with 'I'
+    alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
+    key_set = "".join(dict.fromkeys(key + alphabet))  # Remove duplicates
+    matrix = [list(key_set[i:i+5]) for i in range(0, 25, 5)]
+    return matrix
+
+def find_position(matrix, letter):
+    """Finds the row and column of a letter in the matrix."""
+    for row in range(5):
+        for col in range(5):
+            if matrix[row][col] == letter:
+                return row, col
+    return None, None
+
+def process_digraphs(text):
+    """Splits the text into digraphs (pairs of two letters), adding padding if needed."""
+    text = text.upper().replace("J", "I")
+    digraphs = []
+    i = 0
+    while i < len(text):
+        if i == len(text) - 1:
+            digraphs.append(text[i] + 'X')
+            break
+        if text[i] == text[i + 1]:
+            digraphs.append(text[i] + 'X')
+            i += 1
+        else:
+            digraphs.append(text[i] + text[i + 1])
+            i += 2
+    return digraphs
+
+def playfair_cipher(text, key, mode):
+    """Encrypts or decrypts a text using the Playfair cipher."""
+    matrix = generate_playfair_matrix(key)
+    digraphs = process_digraphs(text)
+    result = ""
+
+    for pair in digraphs:
+        row1, col1 = find_position(matrix, pair[0])
+        row2, col2 = find_position(matrix, pair[1])
+
+        if row1 == row2:  # Same row
+            if mode == 'encrypt':
+                col1, col2 = (col1 + 1) % 5, (col2 + 1) % 5  # Shift right
+            else:
+                col1, col2 = (col1 - 1) % 5, (col2 - 1) % 5  # Shift left
+        elif col1 == col2:  # Same column
+            if mode == 'encrypt':
+                row1, row2 = (row1 + 1) % 5, (row2 + 1) % 5  # Shift down
+            else:
+                row1, row2 = (row1 - 1) % 5, (row2 - 1) % 5  # Shift up
+        else:  # Rectangle rule
+            col1, col2 = col2, col1  # Swap columns
+
+        result += matrix[row1][col1] + matrix[row2][col2]
+
+    return result
+
+
+# Get user input for encryption
+plaintext = input("Enter plaintext to encrypt (only letters, no spaces): ")
+key = input("Enter key (only letters, no spaces): ")
+
+# Encryption
+ciphertext = playfair_cipher(plaintext, key, 'encrypt')
+print("Ciphertext:", ciphertext)
+
+# Get user input for decryption
+ciphertext_to_decrypt = input("Enter ciphertext to decrypt (only letters, no spaces): ")
+key_for_decryption = input("Enter key for decryption (only letters, no spaces): ")
+
+# Decryption
+decrypted_text = playfair_cipher(ciphertext_to_decrypt, key_for_decryption, 'decrypt')
+print("Decrypted Text:", decrypted_text)
